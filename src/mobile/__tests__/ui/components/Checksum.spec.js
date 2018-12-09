@@ -83,7 +83,32 @@ describe('Testing Checksum component', () => {
                         expect(checksum).toEqual('KZW');
                     });
                 });
+
+                describe('when seed length is 0', () => {
+                    it('should return "...', () => {
+                        const props = getProps({ seed: '' });
+
+                        const instance = shallow(<Checksum {...props} />).instance();
+                        const checksum = instance.getChecksumValue();
+
+                        expect(checksum).toEqual('...');
+                    });
+                });
             });
+        });
+    });
+
+    describe('when press event of TouchableOpacity is triggered', () => {
+        it('should call prop method "showModal"', () => {
+            const props = getProps({
+                showModal: jest.fn(),
+            });
+
+            const wrapper = shallow(<Checksum {...props} />);
+            const touchableOpacity = wrapper.find('TouchableOpacity');
+            touchableOpacity.props().onPress();
+
+            expect(props.showModal).toHaveBeenCalledTimes(1);
         });
     });
 });

@@ -140,6 +140,7 @@
   },
   "jest": {
     "preset": "react-native",
+    "collectCoverage": true,
     "roots": [
       "../"
     ],

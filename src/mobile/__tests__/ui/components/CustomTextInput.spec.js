@@ -12,6 +12,8 @@ const getProps = (overrides) =>
             onChangeText: noop,
             label: 'foo',
             theme: { body: {}, input: {}, primary: {}, label: {} },
+            currencyConversion: true,
+            fingerprintAuthentication: true,
         },
         overrides,
     );
@@ -113,6 +115,56 @@ describe('Testing CustomTextInput component', () => {
             const wrapper = shallow(<CustomTextInput {...props} />);
             expect(wrapper.find('TextInput').length).toEqual(1);
         });
+
+        it('should render Text component', () => {
+            const props = getProps();
+
+            const wrapper = shallow(<CustomTextInput {...props} />);
+            expect(wrapper.find('Text').length).toBe(2);
+        });
+
+        describe('and widget is set to denomination', () => {
+            it('should call props method "onDenominationPress" on press event', () => {
+                const props = getProps({
+                    widget: 'denomination',
+                    onDenominationPress: jest.fn(),
+                });
+
+                const wrapper = shallow(<CustomTextInput {...props} />);
+                const touchableOpacity = wrapper.find('TouchableOpacity').first();
+
+                touchableOpacity.props().onPress();
+
+                expect(props.onDenominationPress).toHaveBeenCalledTimes(1);
+            });
+        });
+
+        describe('and widget is set to qr', () => {
+            it('should call props method "onQRPress" on press event', () => {
+                const props = getProps({
+                    widget: 'qr',
+                    onQRPress: jest.fn(),
+                });
+
+                const wrapper = shallow(<CustomTextInput {...props} />);
+                const touchableOpacity = wrapper.find('TouchableOpacity').first();
+
+                touchableOpacity.props().onPress();
+
+                expect(props.onQRPress).toHaveBeenCalledTimes(1);
+            });
+        });
+
+        describe('and widget is set to passwordReentry', () => {
+            it('should render Icon', () => {
+                const props = getProps({
+                    widget: 'passwordReentry',
+                });
+
+                const wrapper = shallow(<CustomTextInput {...props} />);
+                expect(wrapper.find('Icon').length).toBe(2);
+            });
+        });
     });
 
     describe('lifecycle methods', () => {
@@ -174,6 +226,125 @@ describe('Testing CustomTextInput component', () => {
                     expect(wrapper.state().isFocused).toEqual(false);
                 });
             });
+
+            describe('#getChecksumStyle', () => {
+                it('should return theme with body color', () => {
+                    const props = getProps({
+                        seed: '9'.repeat(81),
+                        theme: {
+                            bg: { color: '#000000' },
+                            body: { color: '#FFFFFFF' },
+                            primary: { color: '#000000' },
+                            input: {},
+                            label: {},
+                        },
+                    });
+
+                    const instance = shallow(<CustomTextInput {...props} />).instance();
+                    const style = instance.getChecksumStyle();
+                    expect(style.color.toString()).toEqual('#000000');
+                    expect(style.color.toString()).toEqual('#000000');
+                });
+            });
+
+            describe('#getChecksumValue', () => {
+                describe('when seed length is not zero and seed contains any character other than (A-Z, 9)', () => {
+                    it('should return "!"', () => {
+                        const props = getProps({ seed: '-!' });
+
+                        const instance = shallow(<CustomTextInput {...props} />).instance();
+                        const checksum = instance.getChecksumValue();
+
+                        expect(checksum).toEqual('!');
+                    });
+                });
+
+                describe('when seed length is not zero and seed length is less than 81', () => {
+                    it('should return "< 81"', () => {
+                        const props = getProps({ seed: 'A'.repeat(80) });
+
+                        const instance = shallow(<CustomTextInput {...props} />).instance();
+                        const checksum = instance.getChecksumValue();
+
+                        expect(checksum).toEqual('< 81');
+                    });
+                });
+
+                describe('when seed length is 81 and seed contains valid characters (A-Z, 9)', () => {
+                    it('should return computed checksum of seed', () => {
+                        const props = getProps({ seed: '9'.repeat(81) });
+
+                        const instance = shallow(<CustomTextInput {...props} />).instance();
+                        const checksum = instance.getChecksumValue();
+
+                        expect(checksum).toEqual('KZW');
+                    });
+                });
+
+                describe('when seed length is 0', () => {
+                    it('should return "...', () => {
+                        const props = getProps({ seed: '' });
+
+                        const instance = shallow(<CustomTextInput {...props} />).instance();
+                        const checksum = instance.getChecksumValue();
+
+                        expect(checksum).toEqual('...');
+                    });
+                });
+            });
+        });
+    });
+
+    describe('when focus event of TextInput is triggered', () => {
+        it('should call instance method "onFocus"', () => {
+            const props = getProps();
+
+            const wrapper = shallow(<CustomTextInput {...props} />);
+            const instance = wrapper.instance();
+
+            jest.spyOn(instance, 'onFocus');
+
+            const textInput = wrapper.find('TextInput');
+
+            expect(wrapper.state().isFocused).toEqual(false);
+            textInput.props().onFocus();
+            expect(wrapper.state().isFocused).toEqual(true);
+
+            expect(instance.onFocus).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('when blur event of TextInput is triggered', () => {
+        it('should call instance method "onBlur"', () => {
+            const props = getProps();
+
+            const wrapper = shallow(<CustomTextInput {...props} />);
+            const instance = wrapper.instance();
+
+            jest.spyOn(instance, 'onBlur');
+
+            const textInput = wrapper.find('TextInput');
+
+            wrapper.setState({ isFocused: true });
+            textInput.props().onBlur();
+            expect(wrapper.state().isFocused).toEqual(false);
+
+            expect(instance.onBlur).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('when press event of TouchableOpacity is triggered', () => {
+        it('should call props method "onFingerprintPress"', () => {
+            const props = getProps({
+                onFingerprintPress: jest.fn(),
+            });
+
+            const wrapper = shallow(<CustomTextInput {...props} />);
+            const touchableOpacity = wrapper.find('TouchableOpacity');
+
+            touchableOpacity.props().onPress();
+
+            expect(props.onFingerprintPress).toHaveBeenCalledTimes(1);
         });
     });
 });
